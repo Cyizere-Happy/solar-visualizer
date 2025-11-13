@@ -12,8 +12,25 @@ const cubeMaterial = new THREE.MeshBasicMaterial({color: 'blue'})
 
 //Mesh takes two parameters there is the geometry and Material 
 const CubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial)
+const CubeMesh1 = new THREE.Mesh(cubeGeometry, cubeMaterial)
+CubeMesh.scale.setScalar(0.5)
+CubeMesh1.position.x = -2;
 
-scene.add(CubeMesh) 
+const CubeMesh2 = new THREE.Mesh(cubeGeometry, cubeMaterial)
+CubeMesh2.position.x = 2
+
+const group = new THREE.Group();
+group.add(CubeMesh)
+group.add(CubeMesh1)
+group.add(CubeMesh2)
+
+group.position.y = 1;
+group.scale.setScalar(2)
+
+scene.add(group)
+
+
+// scene.add(CubeMesh) 
 
 //Objects that are farther away look smaller, and closer ones look bigger. (Mimics Human Behaviour)
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 30)
@@ -22,6 +39,22 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // const aspectRatio = window.innerWidth/window.innerHeight;
 // const camera = new THREE.OrthographicCamera(-1*aspectRatio,1*aspectRatio,1,-1,0.1,200)
 camera.position.z = 5;
+camera.position.x = 0;
+camera.position.y = 1;
+
+
+
+const tempVector = new THREE.Vector3(0,-1,0)
+CubeMesh.position.copy(tempVector)
+// CubeMesh.position.x = 1; without using the position property
+// CubeMesh.position.y = 1;
+
+//You can look at the camera position from the object you are working with
+const distanceToCamera = CubeMesh.position.distanceTo(camera.position)
+console.log(distanceToCamera)
+
+const axesHelper = new THREE.AxesHelper(2);
+scene.add(axesHelper)
 
 scene.add(camera)
 
@@ -38,7 +71,7 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 
 const Controls = new OrbitControls(camera, canvas)
 Controls.enableDamping = true;
-Controls.autoRotate = true;
+Controls.autoRotate = false;
 
 //first looked at my devicePixelRatio
 console.log(window.devicePixelRatio)
@@ -61,8 +94,18 @@ window.addEventListener('resize', ()=>{
   
 })
 
+//Initialize clock
+const clock = new THREE.Clock()
+let previousTime = 0;
+
 //For the renderLoop we prevent the thing to only render an Image each and everytime only
 const renderLoop = () =>{
+
+    const currentTime = clock.getElapsedTime()
+    const delta = currentTime-previousTime
+    previousTime = currentTime
+    CubeMesh.rotation.y += THREE.MathUtils.degToRad(100) * delta 
+
     Controls.update()
     renderer.render(scene, camera)
     window.requestAnimationFrame(renderLoop)
