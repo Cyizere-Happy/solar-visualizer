@@ -1,33 +1,44 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { color, Const } from 'three/tsl';
+import { bufferAttribute, color, Const } from 'three/tsl';
 
 
 //For us to even Render we need a scene that contains everything
 const scene = new THREE.Scene();
 
+//Creating a bufferGeometry
+
+// const verticles = new Float32Array([0,0,0,2,0,0,0,2,0])
+// const attribute = new THREE.BufferAttribute(verticles, 3)
+// const geometry = new THREE.BufferGeometry()
+// geometry.setAttribute("position", attribute)
+
+
+
 //Geometry and Material
 const cubeGeometry = new THREE.BoxGeometry(1,1,1);
-const cubeMaterial = new THREE.MeshBasicMaterial({color: 'blue'})
+const cubeMaterial = new THREE.MeshBasicMaterial({color: 'blue', wireframe: true})
+const geometry = new THREE.SphereGeometry(1, 16,16)
 
 //Mesh takes two parameters there is the geometry and Material 
-const CubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial)
-const CubeMesh1 = new THREE.Mesh(cubeGeometry, cubeMaterial)
-CubeMesh.scale.setScalar(0.5)
-CubeMesh1.position.x = -2;
+const CubeMesh = new THREE.Mesh(geometry, cubeMaterial)
+scene.add(CubeMesh)
+// const CubeMesh1 = new THREE.Mesh(cubeGeometry, cubeMaterial)
+// CubeMesh.scale.setScalar(0.5)
+// CubeMesh1.position.x = -2;
 
-const CubeMesh2 = new THREE.Mesh(cubeGeometry, cubeMaterial)
-CubeMesh2.position.x = 2
+// const CubeMesh2 = new THREE.Mesh(cubeGeometry, cubeMaterial)
+// CubeMesh2.position.x = 2
 
-const group = new THREE.Group();
-group.add(CubeMesh)
-group.add(CubeMesh1)
-group.add(CubeMesh2)
+// const group = new THREE.Group();
+// group.add(CubeMesh)
+// group.add(CubeMesh1)
+// group.add(CubeMesh2)
 
-group.position.y = 1;
-group.scale.setScalar(2)
+// group.position.y = 1;
+// group.scale.setScalar(2)
 
-scene.add(group)
+// scene.add(group)
 
 
 // scene.add(CubeMesh) 
@@ -44,8 +55,8 @@ camera.position.y = 1;
 
 
 
-const tempVector = new THREE.Vector3(0,-1,0)
-CubeMesh.position.copy(tempVector)
+// const tempVector = new THREE.Vector3(0,-1,0)
+// CubeMesh.position.copy(tempVector)
 // CubeMesh.position.x = 1; without using the position property
 // CubeMesh.position.y = 1;
 
