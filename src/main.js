@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Pane } from 'tweakpane';
 
 // --- Scene & Camera ---
 const scene = new THREE.Scene();
 
-const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 400);
+const camera = new THREE.PerspectiveCamera(
+  35,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  400
+);
 camera.position.set(0, 5, 100);
 scene.add(camera);
 
@@ -13,6 +17,7 @@ scene.add(camera);
 const canvas = document.querySelector('.threejs');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
 
 // --- Controls ---
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -21,6 +26,8 @@ controls.enableDamping = true;
 // --- Loading Screen ---
 const loadingContainer = document.createElement('div');
 loadingContainer.style.position = 'absolute';
+loadingContainer.style.top = '0';
+loadingContainer.style.left = '0';
 loadingContainer.style.width = '100%';
 loadingContainer.style.height = '100%';
 loadingContainer.style.background = '#000';
@@ -30,33 +37,34 @@ loadingContainer.style.alignItems = 'center';
 loadingContainer.style.justifyContent = 'center';
 loadingContainer.style.color = 'white';
 loadingContainer.style.fontFamily = 'sans-serif';
+loadingContainer.style.zIndex = '1000';
+
 loadingContainer.innerHTML = `
-  Loading... 0%
+  <div id="loading-text">Loading... 0%</div>
   <div style="width:300px;height:20px;border:1px solid #fff;margin-top:10px;">
     <div id="progress" style="width:0%;height:100%;background:#fff;"></div>
   </div>
 `;
+
 document.body.appendChild(loadingContainer);
 
-const progressBar = loadingContainer.querySelector('#progress');
+const progressText = document.getElementById('loading-text');
+const progressBar = document.getElementById('progress');
 
 // --- Loading Manager ---
 const manager = new THREE.LoadingManager();
+
 manager.onProgress = (url, loaded, total) => {
   const progress = (loaded / total) * 100;
   progressBar.style.width = `${progress}%`;
-  loadingContainer.innerHTML = `
-    Loading... ${progress.toFixed(0)}%
-    <div style="width:300px;height:20px;border:1px solid #fff;margin-top:10px;">
-      <div id="progress" style="width:${progress}%;height:100%;background:#fff;"></div>
-    </div>
-  `;
+  progressText.textContent = `Loading... ${progress.toFixed(0)}%`;
 };
+
 manager.onLoad = () => {
   setTimeout(() => {
     loadingContainer.style.display = 'none';
-    animate(); // Start rendering after all textures are loaded
-  }, 500); // optional delay to see the bar
+    animate();
+  }, 500);
 };
 
 // --- Loaders ---
