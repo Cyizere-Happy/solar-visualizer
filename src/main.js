@@ -2,24 +2,23 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Pane } from 'tweakpane';
 
-// Scene
+// --- Scene & Camera ---
 const scene = new THREE.Scene();
 
-// Camera
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 400);
 camera.position.set(0, 5, 100);
 scene.add(camera);
 
-// Renderer
+// --- Renderer ---
 const canvas = document.querySelector('.threejs');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// Controls
+// --- Controls ---
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// --- Loading Manager ---
+// --- Loading Screen ---
 const loadingContainer = document.createElement('div');
 loadingContainer.style.position = 'absolute';
 loadingContainer.style.width = '100%';
@@ -32,29 +31,40 @@ loadingContainer.style.justifyContent = 'center';
 loadingContainer.style.color = 'white';
 loadingContainer.style.fontFamily = 'sans-serif';
 loadingContainer.innerHTML = `
-  Loading...
+  Loading... 0%
   <div style="width:300px;height:20px;border:1px solid #fff;margin-top:10px;">
     <div id="progress" style="width:0%;height:100%;background:#fff;"></div>
   </div>
 `;
 document.body.appendChild(loadingContainer);
+
 const progressBar = loadingContainer.querySelector('#progress');
 
+// --- Loading Manager ---
 const manager = new THREE.LoadingManager();
 manager.onProgress = (url, loaded, total) => {
-  progressBar.style.width = `${(loaded / total) * 100}%`;
+  const progress = (loaded / total) * 100;
+  progressBar.style.width = `${progress}%`;
+  loadingContainer.innerHTML = `
+    Loading... ${progress.toFixed(0)}%
+    <div style="width:300px;height:20px;border:1px solid #fff;margin-top:10px;">
+      <div id="progress" style="width:${progress}%;height:100%;background:#fff;"></div>
+    </div>
+  `;
 };
 manager.onLoad = () => {
-  loadingContainer.style.display = 'none';
-  animate(); // Start rendering only after all textures load
+  setTimeout(() => {
+    loadingContainer.style.display = 'none';
+    animate(); // Start rendering after all textures are loaded
+  }, 500); // optional delay to see the bar
 };
 
-// Texture Loader
+// --- Loaders ---
 const textureLoader = new THREE.TextureLoader(manager);
 const cubeTextureLoader = new THREE.CubeTextureLoader(manager);
 cubeTextureLoader.setPath('/Textures/Cube-Map/');
 
-// Load Planet Textures
+// --- Load Textures ---
 const sunTexture = textureLoader.load('/Textures/2k_sun.jpg');
 const earthTexture = textureLoader.load('/Textures/2k_earth_daymap.jpg');
 const marsTexture = textureLoader.load('/Textures/2k_mars.jpg');
@@ -62,7 +72,7 @@ const mercuryTexture = textureLoader.load('/Textures/2k_mercury.jpg');
 const venusTexture = textureLoader.load('/Textures/2k_venus_surface.jpg');
 const moonTexture = textureLoader.load('/Textures/2k_moon.jpg');
 
-// Materials
+// --- Materials ---
 const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
 const earthMaterial = new THREE.MeshStandardMaterial({ map: earthTexture });
 const mercuryMaterial = new THREE.MeshStandardMaterial({ map: mercuryTexture });
@@ -70,22 +80,22 @@ const venusMaterial = new THREE.MeshStandardMaterial({ map: venusTexture });
 const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture });
 const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
 
-// Background
+// --- Background ---
 scene.background = cubeTextureLoader.load([
   'px.png', 'nx.png',
   'py.png', 'ny.png',
   'pz.png', 'nz.png'
 ]);
 
-// Geometry
+// --- Geometry ---
 const SphereGeometry = new THREE.SphereGeometry(1, 32, 32);
 
-// Sun
+// --- Sun ---
 const sun = new THREE.Mesh(SphereGeometry, sunMaterial);
 sun.scale.setScalar(5);
 scene.add(sun);
 
-// Planets & Moons
+// --- Planets & Moons Data ---
 const planets = [
   { name: "Mercury", radius: 0.5, distance: 10, speed: 0.01, material: mercuryMaterial, moons: [] },
   { name: "Venus", radius: 0.8, distance: 15, speed: 0.007, material: venusMaterial, moons: [] },
@@ -102,7 +112,7 @@ const planets = [
   }
 ];
 
-// Helper functions
+// --- Helper Functions ---
 const createPlanet = (planet) => {
   const mesh = new THREE.Mesh(SphereGeometry, planet.material);
   mesh.scale.setScalar(planet.radius);
@@ -117,7 +127,7 @@ const createMoon = (moon) => {
   return mesh;
 };
 
-// Create Planet Meshes
+// --- Create Planet Meshes ---
 const planetMeshes = planets.map((planet) => {
   const planetMesh = createPlanet(planet);
   scene.add(planetMesh);
@@ -130,19 +140,19 @@ const planetMeshes = planets.map((planet) => {
   return planetMesh;
 });
 
-// Lights
+// --- Lights ---
 scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 const pointLight = new THREE.PointLight(0xffffff, 1000);
 scene.add(pointLight);
 
-// Responsive Resize
+// --- Responsive Resize ---
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Animation Loop
+// --- Animation Loop ---
 const clock = new THREE.Clock();
 
 function animate() {
