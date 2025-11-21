@@ -19,10 +19,40 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+// --- Loading Manager ---
+const loadingContainer = document.createElement('div');
+loadingContainer.style.position = 'absolute';
+loadingContainer.style.width = '100%';
+loadingContainer.style.height = '100%';
+loadingContainer.style.background = '#000';
+loadingContainer.style.display = 'flex';
+loadingContainer.style.flexDirection = 'column';
+loadingContainer.style.alignItems = 'center';
+loadingContainer.style.justifyContent = 'center';
+loadingContainer.style.color = 'white';
+loadingContainer.style.fontFamily = 'sans-serif';
+loadingContainer.innerHTML = `
+  Loading...
+  <div style="width:300px;height:20px;border:1px solid #fff;margin-top:10px;">
+    <div id="progress" style="width:0%;height:100%;background:#fff;"></div>
+  </div>
+`;
+document.body.appendChild(loadingContainer);
+const progressBar = loadingContainer.querySelector('#progress');
+
+const manager = new THREE.LoadingManager();
+manager.onProgress = (url, loaded, total) => {
+  progressBar.style.width = `${(loaded / total) * 100}%`;
+};
+manager.onLoad = () => {
+  loadingContainer.style.display = 'none';
+  animate(); // Start rendering only after all textures load
+};
+
 // Texture Loader
-const textureLoader = new THREE.TextureLoader();
-const cubeTextureLoader = new THREE.CubeTextureLoader();
-cubeTextureLoader.setPath('/Textures/Cube-Map/'); // absolute path from public
+const textureLoader = new THREE.TextureLoader(manager);
+const cubeTextureLoader = new THREE.CubeTextureLoader(manager);
+cubeTextureLoader.setPath('/Textures/Cube-Map/');
 
 // Load Planet Textures
 const sunTexture = textureLoader.load('/Textures/2k_sun.jpg');
@@ -40,7 +70,7 @@ const venusMaterial = new THREE.MeshStandardMaterial({ map: venusTexture });
 const moonMaterial = new THREE.MeshStandardMaterial({ map: moonTexture });
 const marsMaterial = new THREE.MeshStandardMaterial({ map: marsTexture });
 
-// Cube Map as Background
+// Background
 scene.background = cubeTextureLoader.load([
   'px.png', 'nx.png',
   'py.png', 'ny.png',
@@ -101,17 +131,9 @@ const planetMeshes = planets.map((planet) => {
 });
 
 // Lights
-const ambientLight = new THREE.AmbientLight(
-  0xffffff,
-  0.3
-)
-scene.add(ambientLight)
-
-const pointLight = new THREE.PointLight(
-  0xffffff,
-  1000
-)
-scene.add(pointLight)
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const pointLight = new THREE.PointLight(0xffffff, 1000);
+scene.add(pointLight);
 
 // Responsive Resize
 window.addEventListener('resize', () => {
@@ -142,5 +164,3 @@ function animate() {
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
-
-animate();
