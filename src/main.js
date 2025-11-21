@@ -1,75 +1,185 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { bufferAttribute, color, Const } from 'three/tsl';
+import { bufferAttribute, color, Const, distance, step } from 'three/tsl';
+import { Pane } from 'tweakpane';
 
 
 //For us to even Render we need a scene that contains everything
 const scene = new THREE.Scene();
 
-//Creating a bufferGeometry
-
-// const verticles = new Float32Array([0,0,0,2,0,0,0,2,0])
-// const attribute = new THREE.BufferAttribute(verticles, 3)
-// const geometry = new THREE.BufferGeometry()
-// geometry.setAttribute("position", attribute)
-
-
-
-//Geometry and Material
-const cubeGeometry = new THREE.BoxGeometry(1,1,1);
-const cubeMaterial = new THREE.MeshBasicMaterial({color: 'blue', wireframe: true})
-const geometry = new THREE.SphereGeometry(1, 16,16)
-
-//Mesh takes two parameters there is the geometry and Material 
-const CubeMesh = new THREE.Mesh(geometry, cubeMaterial)
-scene.add(CubeMesh)
-// const CubeMesh1 = new THREE.Mesh(cubeGeometry, cubeMaterial)
-// CubeMesh.scale.setScalar(0.5)
-// CubeMesh1.position.x = -2;
-
-// const CubeMesh2 = new THREE.Mesh(cubeGeometry, cubeMaterial)
-// CubeMesh2.position.x = 2
-
-// const group = new THREE.Group();
-// group.add(CubeMesh)
-// group.add(CubeMesh1)
-// group.add(CubeMesh2)
-
-// group.position.y = 1;
-// group.scale.setScalar(2)
-
-// scene.add(group)
-
-
-// scene.add(CubeMesh) 
-
-//Objects that are farther away look smaller, and closer ones look bigger. (Mimics Human Behaviour)
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 30)
-
-//OrthographicCamera Objects look the same size no matter how far they are from the camera.
-// const aspectRatio = window.innerWidth/window.innerHeight;
-// const camera = new THREE.OrthographicCamera(-1*aspectRatio,1*aspectRatio,1,-1,0.1,200)
-camera.position.z = 5;
-camera.position.x = 0;
-camera.position.y = 1;
-
-
-
-// const tempVector = new THREE.Vector3(0,-1,0)
-// CubeMesh.position.copy(tempVector)
-// CubeMesh.position.x = 1; without using the position property
-// CubeMesh.position.y = 1;
-
-//You can look at the camera position from the object you are working with
-const distanceToCamera = CubeMesh.position.distanceTo(camera.position)
-console.log(distanceToCamera)
-
-const axesHelper = new THREE.AxesHelper(2);
-scene.add(axesHelper)
-
+//Creating Camera
+const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 400)
+camera.position.z = 100;
+camera.position.y = 5;
 scene.add(camera)
 
+//Generating Textures
 
+//textureLoader 
+const textureLoader = new THREE.TextureLoader()
+const cubeTextureLoader = new THREE.CubeTextureLoader()
+cubeTextureLoader.setPath('static/Textures/Cube-Map/')
+
+
+//Adding Materials & Texture
+
+const sunTexture = textureLoader.load('static/Textures/2k_sun.jpg')
+const earthTexture = textureLoader.load('static/Textures/2k_earth_daymap.jpg')
+const marsTexture = textureLoader.load('static/Textures/2k_mars.jpg')
+const mercuryTexture = textureLoader.load('static/Textures/2k_mercury.jpg')
+const venusTexture = textureLoader.load('static/Textures/2k_venus_surface.jpg')
+const moonTexture = textureLoader.load('static/Textures/2k_moon.jpg')
+
+const sunMaterial = new THREE.MeshBasicMaterial({
+  map: sunTexture
+})
+const earthMaterial = new THREE.MeshStandardMaterial({
+  map: earthTexture
+})
+const mercuryMaterial = new THREE.MeshStandardMaterial({
+  map: mercuryTexture
+})
+const venusMaterial = new THREE.MeshStandardMaterial({
+  map: venusTexture
+})
+const moonMaterial = new THREE.MeshStandardMaterial({
+  map: moonTexture
+})
+const marsMaterial = new THREE.MeshStandardMaterial({
+  map: marsTexture
+})
+
+const backgroundCubemap = cubeTextureLoader
+.load( [
+  'px.png',
+  'nx.png',
+  'py.png',
+  'ny.png',
+  'pz.png',
+  'nz.png'
+] );
+
+scene.background = backgroundCubemap
+
+
+
+//Creating Meshes
+const SphereGeometry = new THREE.SphereGeometry(1, 32, 32)
+
+//Meshes
+
+//sun
+const sun = new THREE.Mesh(
+  SphereGeometry,
+  sunMaterial
+)
+sun.scale.setScalar(5)
+
+scene.add(sun)
+
+
+//Planetary Array
+const planets = [
+  {
+    name: "Mercury",
+    radius: 0.5,
+    distance: 10,
+    speed: 0.01,
+    material: mercuryMaterial,
+    moons: [],
+  },
+  {
+    name: "Venus",
+    radius: 0.8,
+    distance: 15,
+    speed: 0.007,
+    material: venusMaterial,
+    moons: [],
+  },
+  {
+    name: "Earth",
+    radius: 1,
+    distance: 20,
+    speed: 0.005,
+    material: earthMaterial,
+    moons: [
+      {
+        name: "Moon",
+        radius: 0.3,
+        distance: 3,
+        speed: 0.015,
+      },
+    ],
+  },
+  {
+    name: "Mars",
+    radius: 0.7,
+    distance: 25,
+    speed: 0.003,
+    material: marsMaterial,
+    moons: [
+      {
+        name: "Phobos",
+        radius: 0.1,
+        distance: 2,
+        speed: 0.02,
+      },
+      {
+        name: "Deimos",
+        radius: 0.2,
+        distance: 3,
+        speed: 0.015,
+        color: 0xffffff,
+      },
+    ],
+  },
+];
+
+
+const createPlanet = (planet) =>{
+  const planetMesh = new THREE.Mesh(
+    SphereGeometry,
+    planet.material
+  )
+  planetMesh.scale.setScalar(planet.radius)
+  planetMesh.position.x = planet.distance
+  return planetMesh
+}
+
+const createMoon = (moon) =>{
+  const moonMesh = new THREE.Mesh(
+    SphereGeometry,
+    moonMaterial
+  )
+  moonMesh.scale.setScalar(moon.radius)
+  moonMesh.position.x = moon.distance
+  return moonMesh
+}
+
+
+const planetMeshes = planets.map((planet) =>{
+  const planetMesh = createPlanet(planet)
+  scene.add(planetMesh)
+
+  planet.moons.forEach((moon) => {
+    const moonMesh = createMoon(moon)
+    planetMesh.add(moonMesh)
+  })
+  return planetMesh
+})
+
+//add lights
+const ambientLight = new THREE.AmbientLight(
+  0xffffff,
+  0.3
+)
+scene.add(ambientLight)
+
+const pointLight = new THREE.PointLight(
+  0xffffff,
+  1000
+)
+scene.add(pointLight)
 
 const canvas = document.querySelector('.threejs')
 const renderer = new THREE.WebGLRenderer({
@@ -82,7 +192,6 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 
 const Controls = new OrbitControls(camera, canvas)
 Controls.enableDamping = true;
-Controls.autoRotate = false;
 
 //first looked at my devicePixelRatio
 console.log(window.devicePixelRatio)
@@ -93,30 +202,25 @@ window.addEventListener('resize', ()=>{
     //to update the parameters given to the camera function
     camera.updateProjectionMatrix()
     //For resizing the size won't always be the same to avoid streching
-    renderer.setSize(window.innerWidth, window.innerHeight)
-
-    //removing the Staircase illusion by adding more pixels for it to be less noticable
-    // const maxPixelRatio = Math.min(window.devicePixelRatio, 1.5);
-    
-    // renderer.setPixelRatio(maxPixelRatio)
-
-
-    // renderer.setPixelRatio(window.devicePixelRatio) small phones has many pixels since it has less computing power so now when you do that you are using way too much unecessary pixels
-  
+    renderer.setSize(window.innerWidth, window.innerHeight)  
 })
 
 //Initialize clock
 const clock = new THREE.Clock()
 let previousTime = 0;
 
-//For the renderLoop we prevent the thing to only render an Image each and everytime only
 const renderLoop = () =>{
-
-    const currentTime = clock.getElapsedTime()
-    const delta = currentTime-previousTime
-    previousTime = currentTime
-    CubeMesh.rotation.y += THREE.MathUtils.degToRad(100) * delta 
-
+  planetMeshes.forEach((planet, index) =>{
+    planet.rotation.y += planets[index].speed
+    planet.position.x = Math.sin(planet.rotation.y) * planets[index].distance
+    planet.position.z = Math.cos(planet.rotation.y) * planets[index].distance
+    planet.children.forEach((moon, moonIndex) =>{
+      moon.rotation.y += planets[index].moons[moonIndex].speed
+      moon.position.x = Math.sin(moon.rotation.y) * planets[index].moons[moonIndex].distance
+      moon.position.z = Math.cos(moon.rotation.y) * planets[index].moons[moonIndex].distance
+    })
+  })
+  
     Controls.update()
     renderer.render(scene, camera)
     window.requestAnimationFrame(renderLoop)
